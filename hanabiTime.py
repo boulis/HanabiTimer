@@ -67,7 +67,7 @@ class HanabiTimer:
             action_str = 'starts game by telling'.ljust(30)
             move_duration = 0
         else:
-            move_duration = diff - self.pause_duration + self.undo_duration
+            move_duration = diff - self.pause_duration + self.undone_moves_duration
             action_str = 'took {:5.1f} secs to {}'.format(move_duration, action).ljust(30)
 
         clues_str = TerminalFormatting.BOLD + \
@@ -79,7 +79,7 @@ class HanabiTimer:
         self.current_player = self.next_player()
         self.previous_time = current_time
         self.pause_duration = 0
-        self.undo_duration = 0
+        self.undone_moves_duration = 0
 
 
     def run(self):
@@ -126,7 +126,7 @@ class HanabiTimer:
                         self.record_and_proceed(key, current_time, 
                                 self.multi_key_actions[multi_keys], diff
                         )
-                # check if ther game is over
+                # check if the game is over
                 if self.fives_to_play == 0: break
                 # else go to the next key press
                 continue 
@@ -155,13 +155,26 @@ class HanabiTimer:
                 if self.game_paused:
                     self.game_paused = False
                     print('*** Game Un-paused ***')
-                    self.pause_duration = current_time - self.pause_start_time
+                    self.pause_duration += current_time - self.pause_start_time
                     continue
                 else: 
                     self.game_paused = True
                     print('*** Game Paused ***')
                     self.pause_start_time = current_time
                     continue
+                
+            if self.actions[key] == 'undo':
+                self.undone_moves_duration += self.moves[-1][2]
+                # correct the number of clues, based on what the undone move is
+                if self.moves[-1][1] == 'discard' or self.moves[-1][1] == 'play 5':
+                    self.clues -= 1
+                if self.moves[-1][1] == 'tell':
+                    self.clues += 1
+                # remove the move from our record
+                del self.moves[-1]
+                self.current_player = self.prev_player()
+                print('*** Last move undone ***')
+                continue
 
         # Finally write all the moves to a file, and show the total time
         if self.start is not None:
