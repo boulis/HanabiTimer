@@ -5,6 +5,22 @@ import csv
 import json
 from argparse import ArgumentParser
 
+parser = ArgumentParser(description=(
+            'A utility to keep track of the time taken by Hanabi players.'
+            'It keeps track of number of clues, it can pause and undo moves'))
+parser.add_argument('-o', '--order', dest='order', default='egt',
+                    help=('A quick way to define hardcoded players and their order. It uses a '
+                          'single letter to define a name. For example tge means Thanassis, '
+                          'Giorgos, Evi.'))
+parser.add_argument('--clues', dest='clues', type=int, default=8,
+                    help=('Number of initial clues. Default is 8'))                           
+parser.add_argument('--interval', dest='interval', type=float, default=0.1,
+                    help=('Interval in seconds. If two successive key presses happen faster than'
+                          ' this interval, we consider them pressed together. Default is 0.1'))       
+parser.add_argument('-m', '--multicolor', dest='multicolor', action='store_true', 
+                    help='If this flag is set, the multicolor cards are in play, so there are 6 fives.')                     
+args = parser.parse_args()
+
 class TerminalFormatting:
     HEADER = '\033[95m'
     BLUE = '\033[94m'
@@ -201,5 +217,16 @@ class HanabiTimer:
             print(json.dumps(stats, sort_keys=True, indent=4))
 
 if __name__ == '__main__':
-    h = HanabiTimer()
+    players = []
+    for letter in args.order:
+        if letter == 'e': players.append('Evi')
+        elif letter == 'g': players.append('Giorgos')
+        elif letter == 'k': players.append('Konst')
+        elif letter == 's': players.append('Stella')
+        elif letter == 't': players.append('Thanassis')
+        elif letter == 'y': players.append('Yannis')
+    h = HanabiTimer(players=players, 
+            clues=args.clues,
+            multi_key_interval=args.interval, 
+            multicolor=args.multicolor)
     h.run()
